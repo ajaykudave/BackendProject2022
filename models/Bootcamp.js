@@ -106,16 +106,22 @@ const BootcampSchema = mongoose.Schema({
         type : Date,
         default : Date.now //current date 
     }
+},{
+    toJSON : { virtuals: true},
+    toObject : {virtuals: true}
 })
+//so we add here another object(here virtual course field added automatically and we add toJSON : true because it should add json data there) in schema for Virtual attribute Courses(for Reverse Populate)
 
-//slugify (Create a Bootcamp slug from name)
+//slugify (Create a Bootcamp slug from name)..like we create our own middleware ..mongoose has built in middleware..i.e .pre()..so slugify function convert Devcentral Bootcamp to devcentral-bootcamp
 BootcampSchema.pre('save' , function(next){
   //  console.log('Slugify ran',this.name);
     this.slug = slugify(this.name,{lower : true})
     next();
 });
 
-//Geocoder
+
+
+//Geocoder(split the address in following fields..city,street ...so on) but this should happen before document get save into db..so in order to save that fields with data we use this pre (document middleware)..In document middleware this refer to the document(record)
 BootcampSchema.pre('save' ,async function(next){
 
      const loc = await geocoder.geocode(this.address);
@@ -130,10 +136,33 @@ BootcampSchema.pre('save' ,async function(next){
        country : loc[0].countryCode
      }
        
-     //Dontneedaddressindb
+     //After split we dont need that address field with data to be save in DB so we assign undefined means blank or nothing
      this.address=undefined;
     next();
   });
 
+  //****cascade delete courses when a bootcamp is deleted(means when we delete a specifed bootcamp then all courses associated to that bootcamp also deleted from Course table in db)..simple the courses are in Bootcamp(i.e encapsulated if we destroy capsule the content inside also get deleted.) very nice and imp ****
+
+  /* Here Document as well as Query Middleware used and executed (Query middleware executed when we use await) */
+  BootcampSchema.pre('remove',async function(next){
+    console.log(`Courses being removed from bootcamp ${this._id}`);
+    //we use async bec we call delete asynchronous method and that return promise
+
+    await this.model('Course').deleteMany({ bootcamp : this._id});//here Query middle ware called
+    //similar to await Course.deleteMany(); obj.method() in java
+
+    //this will not work on findByIdAndDelete method
+  })
+
+
+  //Reverse Populate using virtuals(field name,{options})..field name means column name eg.courses
+    BootcampSchema.virtual('courses',{
+        ref : 'Course',//model name
+        localField : '_id', //current model id(Bootcamp)
+        foreignField : 'bootcamp' ,//foreign field in Course MOdel
+        justOne : false //by default this is false that it populate virtual with array.. If we set justOne:true, the populated virtual will be a single doc or null.
+    });
+
+
 //export 
-module.exports = mongoose.model('Bootcamp',BootcampSchema);
+module.exports = mongoose.model('Bootcamp',BootcampSchema);//firs argument in model() is collection name(table name),second is schema
