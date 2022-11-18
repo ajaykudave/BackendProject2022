@@ -1,3 +1,4 @@
+const path = require('path');//this for file upload extension(eg .jpg,.png etc)..to generate original file ext
 //these are middleware functions(Route Handlers or controllers)
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middlewares/async');
@@ -10,98 +11,17 @@ const geocoder = require('../utils/geoCoder');
 //@route    GET(method) and /api/v1/bootcamps(route) associated with the follo controller funtion
 //@access   Public  
 exports.getBootcamps = asyncHandler(async (req , res , next) =>{
-    /* res.status(200).json({success : true, 
-                msg : "show all bootcamps",
-                hello : req.hello //so we retrieve here hello which we create variable in custom middleware
-            }); */
-            let query;
 
-            //now we are going to create our req.query for that we need to use spread opertor
-            const reqQuery = {...req.query };//we copy all express req.query properties into our local variable
-            //so we get that query parameters here passed from postman using express req.query 
-           // let queryStr = JSON.stringify(req.query);
-
-           const removeFields = ['select','sort','page','limit'];//array
-
-           //Loop over removeFields array and delete select from reqQuery
-           removeFields.forEach((params) => delete reqQuery[params]);
-
-            let queryStr = JSON.stringify(reqQuery);
-
-            queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g,(match)=>`$${match}`);
-            //so basically we write logic to put $ sign in front of query operator operator..eg..$gt
-            //lte,gt these are mongoose operators and \b is word boundry character
-
-
-             /* also there is reverse populate .i.e for each bootcamp we want to show their provided courses list..so for that we need reverse populate using virtual (bec each bootcamp has multiple courses(One to Many.) but each Course doesnot have multiple Bootcamp) ..for this we need to change in Bootcamp controller and model file*/
-             
-
-            console.log(queryStr);
-         //fetch bootcamp from db(this method return array)
-        //finding resource (bootcamps)
-       /* query = Bootcamp.find(JSON.parse(queryStr)).populate({
-            path : 'courses',
-            select : 'title description'
-        }); // reverse populate specific field with data
-        */
-        query = Bootcamp.find(JSON.parse(queryStr)).populate('courses');
-
-      //  console.log(req.query.select);
-        //Select Fields
-        if(req.query.select){
-            const fields = req.query.select.split(',').join(' ');//join make whole array element as single string with space an return
-            console.log(fields);
-            query = query.select(fields);//return specified field with data
-        }
-
-        //Sort(Ascending =1  and descending = -1)
-        if(req.query.sort){
-            const sortBy = req.query.sort.split(',').join(' ');//join make whole array element as single string with space an return
-            console.log(sortBy);
-            query = query.sort(sortBy);//return specified field with data
-        }else{
-            //sort by default date in our model
-            query = query.sort('-createdAt');
-        }
-
-        //Pagination
-        const page = parseInt(req.query.page,10) || 1; //page number
-        const limit = parseInt(req.query.limit,10) || 25; //number of document or record(bootcamp) should displayed on a page
-        //const skip = (page - 1)* limit;
-        const startIndex = (page - 1)* limit;
-        const endIndex = page * limit;
-        const total = await Bootcamp.countDocuments();
-
-
-        query = query.skip(startIndex).limit(limit);
-
-        //executing query
-        const bootcamps = await query;
-
-        //Pagination Result
-        const pagination = {}; //blank Object
-        
-        if(endIndex < total){
-            pagination.next ={
-                page : page + 1,
-                limit :limit
-            }
-        }
-
-        if(startIndex > 0){
-            pagination.pre = {
-                page : page - 1,
-                limit :limit //if we add only limit i.e that also fine because value also limit 
-            }
-        }
-
+        //***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then middleware we pass next so it pass control to controller --and after that controller method give response..and end to controller]
+           
         //response to front
-        res.status(200).json({
+       /*  res.status(200).json({
             success : true,
             count : bootcamps.length,
             pagination:pagination,  //if key : value are same then we can add only key ..it works
             data : bootcamps
-        });
+        }); */
+        res.status(200).json(res.advancedResults);
  
 });
 //@desc     Get Bootcamps by id
@@ -211,4 +131,63 @@ exports.getBootcampByRadius =asyncHandler(async (req , res , next)=>{
     count : bootcamps.length,
     data : bootcamps
   })
+ });
+
+ //upload file
+ //@desc        Upload an Image for specific Bootcamp
+ //@route       PUT /api/v1/bootcamps/:bootcampId/photo
+ //@access      Private
+ exports.uploadPhotoForBootcamp =asyncHandler(async (req,res,next)=>{
+
+    const bootcamp = await Bootcamp.findById(req.params.bootcampId);
+
+    if(!bootcamp){
+        return next(new ErrorResponse(`Bootcamp not found with id ${req.params.bootcampId}`),404);
+    }
+
+    //check if file not uploaded bec..it doest contain object(file)
+    if(!req.files){
+        return next(new ErrorResponse(`Please enter file for upload`,400));
+    }
+   // console.log(req.files.file);//Inside req.files there is object (file)..object inside object..and we want that inner object because that contain required keys(datas)
+
+    const file = req.files.file; //so we assign all content or data inside file to our local file variable
+   /*  const file = {...req.files.file};  both are same 
+    console.log('Ajay file console',file); */
+    //some validation before upload file is photo only [ mimetype: 'image/jpeg' store in express-fileupload this way]..that why in if we check condition startsWith
+     if(!file.mimetype.startsWith('image')){
+        //if it not start with image..i.e it s not an image so we throw error
+        return next(new ErrorResponse(`Please upload(or select) image file only`,400));
+    }
+
+    //file size check validation
+    if(file.size > process.env.MAX_FILE_SIZE){
+        return next(new ErrorResponse(`Please upload(or select) image file of size less than ${process.env.MAX_FILE_SIZE}`,400));
+    }
+
+    //suppose someone add file with same name so we first overwrite the file name or create custom name for evrytime when any one upload image (custom name format look like => Photo_bootcampId.jpg)
+    file.name =`photo_${bootcamp._id}${path.parse(file.name).ext}`;
+
+    console.log(file.name);
+
+    //After that move file to the particular location in our application(server)
+    file.mv(`${process.env.FILE_UPLOAD_PATH}/${file.name}` ,async (err)=>{
+        if(err){
+            console.log(err);
+            return next(new ErrorResponse("Problem with file upload",500));
+        }
+        await Bootcamp.findByIdAndUpdate(req.params.bootcampId,{
+            "photo":file.name
+        });
+        
+        //response from server
+        res.status(200).json({
+            success : true,
+            data : file.name
+        })
+    }) 
+
+   
+
+
  });

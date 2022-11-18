@@ -11,36 +11,35 @@ const Bootcamp = require('../models/Bootcamp.js');
 //@access   Public 
 exports.getCourses = asyncHandler(async (req,res,next)=>{
 
-    let query;
     //req.params--check in url :value eg :1234
     console.log(req.params.bootcampId);
     if(req.params.bootcampId){
 
-       /*  query =Course.find({bootcamp :req.params.bootcampId}).populate({
-            path : 'bootcamp',
-            select : 'name description'
-        }); */
-        query =Course.find({bootcamp :req.params.bootcampId});
+       const courses =await Course.find({bootcamp :req.params.bootcampId});//we find all courses where bootcampId=vlaue ..we pass object
+        //query =Course.find(req.params.bootcampId);//this also work
+
+        //if course of specific bootcamp so directly return response no need pagination here
+        return res.status(200).json({
+            success : true,
+            count : courses.length,
+            data : courses
+        });
+
     }else{
       /*   query = Course.find().populate('bootcamp'); In the argument of the populate() method we pass the field we want to populate with the user data. bootcamp is field in Course model..so populate methode use its value and get data
 
-        as we see when we get all courses we get all details of course with bootcamp id associated with it ..But we now want that instead of bootcamp id our who bootcamp data also populate with courses data..so we use populate() and this happen bec Bootcamp id (primaray key is foreign key in Courses Schema) */
+        as we see when we get all courses we get all details of course with bootcamp id associated with it ..But we now want that instead of bootcamp id our who bootcamp data also populate with courses data..so we use populate() and this happen bec Bootcamp id (primaray key is foreign key in Courses Schema) 
         query = Course.find().populate({
             path : 'bootcamp',
             select : 'name description'
-        }); //suppose instead of show or populate all Bootcamp details we want  only few details to be populate so pass object
+        }); */ 
+        //suppose instead of show or populate all Bootcamp details we want  only few details to be populate so pass object
 
         /* also there is reverse populate .i.e for each bootcamp we want to show their provided courses list..so for that we need reverse populate using virtual (bec each bootcamp has multiple courses(One to Many.) but each Course doesnot have multiple Bootcamp) ..for this we need to change in Bootcamp controller and model file*/
+        //for all courses we use pagination
+        res.status(200).json(res.advancedResults);
     }
 
-    const courses = await query;
-    console.log('count:',courses.length);
-
-    res.status(200).json({
-        success : true ,
-        count : courses.length,
-        data : courses
-    });
 });
 
 //@desc     Get a single Course

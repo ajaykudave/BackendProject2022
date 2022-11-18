@@ -15,6 +15,10 @@ so currently we use morgan logger(external)..this commented is our own custom lo
 //morgan logger middleware function
 const morgan = require('morgan');
 
+//express fileupload middleware for fileupload 
+const fileupload = require('express-fileupload');
+const path       = require('path');
+
 //colors
 const colors = require('colors');
 //customErrorHandler
@@ -43,6 +47,12 @@ if(process.env.NODE_ENV === 'development')
 {
     app.use(morgan('dev'));//so morgan internally do console.log()which we does in custom logger
 }
+
+//we use here because before request come to server we need to first use this functionality after that if any route request come then chnages(result) comes in piture..suppose addition =a+b after that we print addi then we get perfect result..but suppose we print addition result even before result was not prepare...so keep in mind this
+app.use(fileupload());
+
+app.use(express.static(path.join(__dirname , 'public')))//static is built in express middleware function which serves static files..we setting public as static folder.
+//console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file ..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
 
 //mounts routers(when we call a request from postman it first come here)
 app.use('/api/v1/bootcamps' , bootcamps);

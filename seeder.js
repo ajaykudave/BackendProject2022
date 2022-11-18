@@ -23,6 +23,8 @@ mongoose.connect(process.env.MONGO_URI, {
 
  const courses   = JSON.parse(fs.readFileSync(`${__dirname}/_data/courses.json`,'utf8'));
 
+ console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
+
  //put or import into db
  const importData = async ()=>{
 
