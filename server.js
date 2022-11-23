@@ -7,6 +7,7 @@ const dotenv  = require('dotenv');
 //load route files here by path
 const bootcamps = require('./routes/bootcamps.js');
 const courses   = require('./routes/courses.js');
+const auth      = require('./routes/auth.js');
 
 /* const logger = require('./middlewares/loggers.js');
 so currently we use morgan logger(external)..this commented is our own custom logger
@@ -19,6 +20,9 @@ const morgan = require('morgan');
 const fileupload = require('express-fileupload');
 const path       = require('path');
 
+//for generting cookie
+const cookieParser = require('cookie-parser');
+
 //colors
 const colors = require('colors');
 //customErrorHandler
@@ -30,6 +34,7 @@ const connectDB = require('./config/db.js');
 
 //in order to use that variable we need to load that config .env file using dotenv 
 dotenv.config({ path : './config/config.env'});
+console.log(process.env.PORT);
 
 //Connect to db by calling function
 connectDB();
@@ -38,6 +43,8 @@ const app = express(); /*initialize our app to express (web framwork) means we u
 
 //Body Parser(middleware)which is come with express installation nowdays..In order to read JSon data got from Front end and fetch using req.body...if we not specify below line then in req.body is undefined
 app.use(express.json());
+
+app.use(cookieParser);
  
 //In order to use middleware 
 /* app.use(logger); */
@@ -56,7 +63,8 @@ app.use(express.static(path.join(__dirname , 'public')))//static is built in exp
 
 //mounts routers(when we call a request from postman it first come here)
 app.use('/api/v1/bootcamps' , bootcamps);
-app.use('/api/v1/courses', courses)
+app.use('/api/v1/courses', courses);
+app.use('/api/v1/auth', auth);
 
 //calling or using errorHandler
 app.use(errorHandler);
@@ -68,7 +76,9 @@ const server = app.listen(PORT , console.log(`Server running on ${process.env.NO
 process.on('unhandledRejection' ,(err , promise)=>{
     console.log(`Error : ${err.message}`.red);
     console.log('Inside server event');
-    // console.log(err);
+    console.log(err);
     //server close
     server.close(()=> process.exit(1));
-})
+});
+
+//***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then controller method--then middleware nd middleware return some response back to controller..and end to controller]

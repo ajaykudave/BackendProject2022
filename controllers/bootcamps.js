@@ -12,6 +12,7 @@ const geocoder = require('../utils/geoCoder');
 //@access   Public  
 exports.getBootcamps = asyncHandler(async (req , res , next) =>{
 
+    console.log('Func started..');
         //***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then middleware we pass next so it pass control to controller --and after that controller method give response..and end to controller]
            
         //response to front
