@@ -107,7 +107,12 @@ const advancedResults =(model ,populate) => async (req , res , next) => {
         
         next();
         /* What does next () do in middleware?
-           The next() function is a function in the Express router that, when invoked, executes the next middleware in the middleware stack. If the current middleware function does not end the request-response cycle, it must call next() to pass control to the next middleware function. Otherwise, the request will be left hanging */
+           The next() function is a function in the Express router that, when invoked, executes the next middleware in the middleware stack. If the current middleware function does not end the request-response cycle, it must call next() to pass control to the next middleware function. Otherwise, the request will be left hanging 
+           
+           simple terms in our case next takes req,res object in it and pass controller to controller function(getAllBootcamps) in Bootcamp..so that we can access or call  res.advancedResults ={} object
+
+           so internally it encapsulate in it req,res ,next object ..therefore next() we write like this
+           */
 }
 
 module.exports = advancedResults;

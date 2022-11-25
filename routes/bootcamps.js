@@ -3,12 +3,16 @@
 const express = require('express');
 const router  = express.Router(); //in order to use express router we first load express module
 
+console.log('Inside Route file');
 //so i bring that methods(controller logic)here by destructuring
 const {getBootcamps,getBootcampById,createBootcamp,upadteBootcamp,deleteBootcamp, getBootcampByRadius,uploadPhotoForBootcamp} = require('../controllers/bootcamps.js'); //first dot tell out from routes folder then 2nd dot for root folder then controllers folder
 
 //**so here we pass Bootcamp instance as argument for model parameter in advancedResults middleware function(model,populate)
 const Bootcamp = require('../models/Bootcamp.js')
 const advancedResults = require('../middlewares/advancedResults.js');
+
+//protect middleware
+const { protect , authorize} = require('../middlewares/auth.js');//now put this protect in createBootcamp route before controller method name
 
 //Include other Resource routers
 const courseRouter = require('./courses.js');
@@ -20,7 +24,10 @@ router.route('/radius/:zipcode/:distance').get(getBootcampByRadius);
 
 router
 .route('/:bootcampId/photo')
-.put(uploadPhotoForBootcamp)
+.put(protect , authorize('publisher' , 'admin') , uploadPhotoForBootcamp)
+//*****protect is our custom middleware which is used to validate the token .AS we know at the time of login we get token from server .so this token require at the time of create ,update and delete a resources(Bootcamp,course).
+//so basically this middleware verify the token of client with the secret (which is use at the time of token generation at server side).if it s valid token then it returns payload object..payload contain id(User Id) ******
+
 
 /* so whenever we want to call or use that middleware we must pass into get() with our controller method..i.e get(middlewarename(parameters),controllerMethodName) */
 
@@ -33,13 +40,13 @@ router
 router
 .route('/')
 .get(advancedResults(Bootcamp,'courses'),getBootcamps)
-.post(createBootcamp);
-
+.post(protect ,authorize('publisher' , 'admin') , createBootcamp);
+// .post(createBootcamp);
 router
 .route('/:bootcampId')
-.put(upadteBootcamp)
-.delete(deleteBootcamp)
-.get(getBootcampById);
+.put(protect , authorize('publisher' , 'admin') , upadteBootcamp)
+.delete(protect , authorize('publisher' , 'admin') , deleteBootcamp)
+.get(protect , authorize('publisher' , 'admin') , getBootcampById);
 
 
 

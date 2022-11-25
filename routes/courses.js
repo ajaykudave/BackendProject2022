@@ -10,6 +10,8 @@ const {getCourses,getCourse,addCourse,updateCourse,deleteCourse} = require('../c
 const Course = require('../models/Course.js');
 const advancedResults = require('../middlewares/advancedResults.js');
 
+const { protect , authorize } = require('../middlewares/auth.js');
+
 //route(/:bootampId).get(courses)..this line dyncamically added or merge..i write here for my understanding
 /* router
 .route('/') 
@@ -22,13 +24,15 @@ router
         path : 'bootcamp',
         select : 'name description'
     }),getCourses)
-.post(addCourse)
+.post(protect , authorize('publisher' , 'admin') , addCourse)
 
 router
 .route('/:courseId')
 .get(getCourse)
-.put(updateCourse)
-.delete(deleteCourse)
+.put(protect , authorize('publisher' , 'admin') , updateCourse)
+.delete(protect , authorize('publisher' , 'admin') , deleteCourse)
 
 module.exports = router;
+//protect is our custom middleware which is used to validate the token .AS we know at the time of login we get token from server .so this token require at the time of create ,update and delete a resources(Bootcamp,course).
+//so basically this middleware verify the token of client with the secret (which is use at the time of token generation at server side).if it s valid token then it returns payload object..payload contain id(User Id)
 

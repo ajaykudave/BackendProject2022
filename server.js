@@ -20,7 +20,7 @@ const morgan = require('morgan');
 const fileupload = require('express-fileupload');
 const path       = require('path');
 
-//for generting cookie
+//for generting cookie..this middleware return a function.so after cookieParser() round bracket add
 const cookieParser = require('cookie-parser');
 
 //colors
@@ -34,7 +34,7 @@ const connectDB = require('./config/db.js');
 
 //in order to use that variable we need to load that config .env file using dotenv 
 dotenv.config({ path : './config/config.env'});
-console.log(process.env.PORT);
+//console.log(process.env.PORT);
 
 //Connect to db by calling function
 connectDB();
@@ -44,12 +44,14 @@ const app = express(); /*initialize our app to express (web framwork) means we u
 //Body Parser(middleware)which is come with express installation nowdays..In order to read JSon data got from Front end and fetch using req.body...if we not specify below line then in req.body is undefined
 app.use(express.json());
 
-app.use(cookieParser);
+//logging middleware(morgan) only in development environment
+app.use(cookieParser()); //i forget to put round bracket front of middleware funtion.(cookieParser)so due to this i am unable to call route..and In postman all request are in sending state continuously ..no response 
+
+/* app.use(cookieParser); */
  
 //In order to use middleware 
 /* app.use(logger); */
 
-//logging middleware(morgan) only in development environment
 if(process.env.NODE_ENV === 'development')
 {
     app.use(morgan('dev'));//so morgan internally do console.log()which we does in custom logger
@@ -60,6 +62,8 @@ app.use(fileupload());
 
 app.use(express.static(path.join(__dirname , 'public')))//static is built in express middleware function which serves static files..we setting public as static folder.
 //console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file ..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
+
+/* app.use(cookieParser); */
 
 //mounts routers(when we call a request from postman it first come here)
 app.use('/api/v1/bootcamps' , bootcamps);
@@ -81,4 +85,12 @@ process.on('unhandledRejection' ,(err , promise)=>{
     server.close(()=> process.exit(1));
 });
 
-//***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then controller method--then middleware nd middleware return some response back to controller..and end to controller]
+//***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then controller method--then middleware nd middleware return some response back to controller..and end to controller] and if we use some our own custom middleware then those middleware first called( like advanceResult) and then controller called...so this sequence of call is specify in route file while defining a route..
+/* eg.
+router
+.route('/')
+.get(advancedResults(Bootcamp,'courses'),getBootcamps)
+.post(createBootcamp); 
+
+advanceResults() its middleware and getBootcamps is controller name
+*/

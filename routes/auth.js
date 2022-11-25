@@ -1,16 +1,23 @@
 const express = require('express');
 const router  = express.Router();
 
-const { registerUser , login} = require('../controllers/auth.js'); //destructuring
+console.log('Inside Route file');
+const { registerUser , login , getMe} = require('../controllers/auth.js'); //destructuring
 
-/* router
-.route('/register')
-.post(registerUser); */
-
-/* router
-.route('/login')
-.post(login); */
+const { protect } = require('../middlewares/auth.js');
 router
-.post('/register' , registerUser)
+.route('/register')
+.post(registerUser); 
+
+ router
+.route('/login')
+.post(login);
+
+//this route is for bringing logined User data..here we put protect becasue where we check the token we got at the time of login and also we fetch login user data and attached to req objcet..so that it used in controller 
+router
+.route('/me')
+.get(protect , getMe);
+/* router
+.post('/register' , registerUser)...we can write route this way also */
 
 module.exports =router;

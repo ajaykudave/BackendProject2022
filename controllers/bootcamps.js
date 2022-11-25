@@ -12,7 +12,6 @@ const geocoder = require('../utils/geoCoder');
 //@access   Public  
 exports.getBootcamps = asyncHandler(async (req , res , next) =>{
 
-    console.log('Func started..');
         //***FLOW  OF CONTROL***[so whenever we call any route from postman it first come to server then --control go to route file --then middleware we pass next so it pass control to controller --and after that controller method give response..and end to controller]
            
         //response to front
@@ -22,7 +21,12 @@ exports.getBootcamps = asyncHandler(async (req , res , next) =>{
             pagination:pagination,  //if key : value are same then we can add only key ..it works
             data : bootcamps
         }); */
-        res.status(200).json(res.advancedResults);
+        res.status(200).json(res.advancedResults); //here we call an object advanceResults which is inside res object ..therefore we call like this..res.advanceResults
+        /*   eg. res ={
+            advancedResults = {
+                
+            }
+        } */
  
 });
 //@desc     Get Bootcamps by id
@@ -53,6 +57,7 @@ exports.createBootcamp =asyncHandler( async (req , res , next) =>{
     
         //console.log(req.body);
         // res.status(400).json({success : false})
+        console.log(`Currently login User: ${req.user.name}`)
         const bootcamp  = await Bootcamp.create(req.body);
          res.status(201).json({
              success : true,
@@ -66,7 +71,7 @@ exports.createBootcamp =asyncHandler( async (req , res , next) =>{
 //@access   Private
 exports.upadteBootcamp = asyncHandler(async (req , res , next)=>{
     // res.status(200).json({success : true,msg :`Updated bootcamp of Id ${req.params.id}`});
-   
+   console.log(`Currently Login User ${req.user.name}`);
      let bootcamp = await Bootcamp.findById(req.params.bootcampId); //we first check whether that particular bootcamp is present or not if id incorrect then it will return undefined and its true and we got an error in if block
     //if id is incorrect or Bootcamp entry corrosponding to specified id is not in db And  therefore no bootcamp find is true then execute following if
         if(!bootcamp) {
@@ -92,6 +97,7 @@ exports.deleteBootcamp =asyncHandler(async (req , res , next)=>{
    
         //so findByDelete method return promise i.e bootcamp object
        /*  const bootcamp = await Bootcamp.findByIdAndDelete(req.params.id); */
+       console.log(`Currently Login User ${req.user.name}`);
        const bootcamp = await Bootcamp.findById(req.params.bootcampId);
         console.log(bootcamp);
 
@@ -140,6 +146,7 @@ exports.getBootcampByRadius =asyncHandler(async (req , res , next)=>{
  //@access      Private
  exports.uploadPhotoForBootcamp =asyncHandler(async (req,res,next)=>{
 
+    console.log(`Currently Login User ${req.user.name}`);
     const bootcamp = await Bootcamp.findById(req.params.bootcampId);
 
     if(!bootcamp){

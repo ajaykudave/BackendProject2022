@@ -5,7 +5,7 @@ const User = require('../models/User.js')
 
 //@desc     Register user
 //@route    POST(method) and /api/v1/auth/register
-//@access   Public  
+//@access   Public (So that everyone can register)
 exports.registerUser =asyncHandler(async (req , res , next)=>{
 
     const { name , email , role , password} = req.body; 
@@ -17,13 +17,15 @@ exports.registerUser =asyncHandler(async (req , res , next)=>{
     });
     //JWT comes in piture when we using cookies once we login then after any time when i reopen same page then it showed login inside page..no need to again login  but the thing is when any who sent request to server it s actual person or hacker ..so to resolve this problem when we register first time server sent web token and that token is saved on client site inisde cookie and when we login in then that cookie check by server and it allow
     /* so here we are working on backend i.e server so we generate webtoken using jwt library and sent that token in response when user make request fro register */
-    const token = user.getSignedJwtToken();
-    res.status(200).json({ success : true , webTokenFromServer : token})
+   /*  const token = user.getSignedJwtToken();
+    res.status(200).json({ success : true , webTokenFromServer : token}) */
+    //sending token inisde cookie
+    sendTokenResponse(user , res , 200 );
 });
 
-//@desc         Login User
+//@desc         Login User(Every time when we login we get different web tooken eveytime)
 //@route        POST /api/v1/auth/login
-//@access       Public 
+//@access       Public (So that everyone registered User can login)
 exports.login = asyncHandler(async (req , res , next)=>{
 
    const { email , password } = req.body; //object destructuring
@@ -67,7 +69,7 @@ exports.login = asyncHandler(async (req , res , next)=>{
     sendTokenResponse(user , res , 200)
 })
 
-//Get token from model and put that token into the cookie and sent that cookie to client
+//Get token from model(by invoking getSignedJwtToken() function) and put that token into the cookie and sent that cookie to client from server side(here we define a arrow function below)
 const sendTokenResponse = (user , res , statusCode) => {
 
     //create token
@@ -76,9 +78,17 @@ const sendTokenResponse = (user , res , statusCode) => {
     //creating cookie options
     const options ={
 
-        expires : new Date(Date.now) + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 *1000,
+        expires : new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 *1000),
         httpOnly: true
     }
+    console.log('time',Date.now());
+    //httpOnly : true means this cookie should access through client side script
+   // new Date(Date.now() + process.env.JWT_COOKIE_EXPIRE * 24 * 60 * 60 *1000 we do this calculation bec we cant write 30d in cookie expire time ..so we only write 30 and calculate or specify this is  30 days (config.env file line---> JWT_COOKIE_EXPIRE=30 )
+
+   //we want that in production mode our cookie sent in https protocol..so that we need to set secure property= true..when we set true then cookie will not shown in cookie section in postman
+   if(process.env.NODE_ENV === 'production'){
+         options.secure = false; //we are creating and setting property secure in options object
+   }
 
     //this is how creating cookie and sending in response is same time..res.cookie(name,val,cookieOptions)
     res
@@ -89,4 +99,24 @@ const sendTokenResponse = (user , res , statusCode) => {
             webTokenFromServer : token
         })
         //in order to view cookie same like we go to inside brower cookie section same in postaman we need to travel in cookie section..where cookie is present
+
+        /* why we use cookie for storing Web token?
+        ans- Storing a web token in local storage is not good due to security issue..so storing in cookie is better than storing in a local Storage */
 }
+
+//@desc     Get Current Logged In User
+//@route    GET and api/v1/auth/me
+//@access   Private(because of logged in User access)
+exports.getMe =asyncHandler(async (req , res , next) =>{
+
+    //const user = await User.findById(req.user.id); //we attached user(currently login ) to req object from protect middleware
+
+    const userFromProtect = req.user;
+
+    res.status(200).json({
+        success : true,
+        data : userFromProtect
+    })
+
+})
+
