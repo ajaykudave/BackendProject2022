@@ -32,6 +32,8 @@ router
 .put(protect , authorize('publisher' , 'admin') , updateCourse)
 .delete(protect , authorize('publisher' , 'admin') , deleteCourse)
 
+//here on router object we add get,put,delete i.e we not write separate router.get(),router.put..etc..so this like our realife example In Our home there is hook..on single hook we hang multiple cloths shirt paint so on..both role is to attched that cloths on that single hook..rather put in separate for each cloth..this will take lots of hook and space..similary to reduce code we use this type of style of coding.
+
 module.exports = router;
 //protect is our custom middleware which is used to validate the token .AS we know at the time of login we get token from server .so this token require at the time of create ,update and delete a resources(Bootcamp,course).
 //so basically this middleware verify the token of client with the secret (which is use at the time of token generation at server side).if it s valid token then it returns payload object..payload contain id(User Id)

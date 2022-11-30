@@ -57,7 +57,20 @@ exports.createBootcamp =asyncHandler( async (req , res , next) =>{
     
         //console.log(req.body);
         // res.status(400).json({success : false})
-        console.log(`Currently login User: ${req.user.name}`)
+        console.log(`Currently login User: ${req.user.id}`)//we get this user data(object) from our protect middleware(due to next() call)
+
+        //Add User to req.body
+        req.body.user = req.user.id; //basically we initializ the user column with user id..before authorization we dont have user column but once we completed Authorization then now we add User column..refer Bootcamp.json file there we can see user : value present
+
+        //If User is Publisher role then it can add only one Bootcamp but admin can add more than one Bootcamps also we check if we got same Bootcamp associated with login user then also return an error
+
+        const publishedBootcamp = await Bootcamp.findOne({ user : req.user.id});
+
+        if(publishedBootcamp && req.user.role !== 'admin'){
+            return next(new ErrorResponse(`The User with Id ${req.user.id} has already published a Bootcamp(i.e it Punlisher role)` , 400));
+        }
+        
+        //else if admin then add many bootcamps
         const bootcamp  = await Bootcamp.create(req.body);
          res.status(201).json({
              success : true,
@@ -70,9 +83,11 @@ exports.createBootcamp =asyncHandler( async (req , res , next) =>{
 //@route    UPDATE and /api/v1/bootcamps/:id
 //@access   Private
 exports.upadteBootcamp = asyncHandler(async (req , res , next)=>{
-    // res.status(200).json({success : true,msg :`Updated bootcamp of Id ${req.params.id}`});
-   console.log(`Currently Login User ${req.user.name}`);
-     let bootcamp = await Bootcamp.findById(req.params.bootcampId); //we first check whether that particular bootcamp is present or not if id incorrect then it will return undefined and its true and we got an error in if block
+
+        console.log(`Currently Login User ${req.user.id}`);
+        
+       let bootcamp = await Bootcamp.findById(req.params.bootcampId);
+        //let bootcamp = await Bootcamp.findById(req.params.bootcampId); //we first check whether that particular bootcamp is present or not if id incorrect then it will return undefined and its true and we got an error in if block
     //if id is incorrect or Bootcamp entry corrosponding to specified id is not in db And  therefore no bootcamp find is true then execute following if
         if(!bootcamp) {
             console.log('Inside if of Bootcamp Update');
@@ -80,8 +95,23 @@ exports.upadteBootcamp = asyncHandler(async (req , res , next)=>{
            return next(new ErrorResponse(`Bootcamp not found withid of ${req.params.bootcampId} `,404));
          
         }
-        //if id id correct then find by id and update
-        bootcamp = await Bootcamp.findByIdAndUpdate(req.params.bootcampId , req.body , {new : true ,runValidators : true});
+       /*  //if id id correct then find by id and update
+        bootcamp = await Bootcamp.findByIdAndUpdate(req.params.bootcampId , req.body , {new : true ,runValidators : true}); */
+
+        //Make sure that user loggined is the owner of Bootcamp which are going to update and also if it is admin role then it has all permissions but we check if not admin then show error
+        console.log('bootcamp.user' ,bootcamp.user);//this will return js Object(new ObjectId("63845c5a889e49cd6c7b6405"))..therefore we add .toString() so it convert to string and compare with string on right side
+        if(bootcamp.user.toString() !== req.user.id && req.user.role !=='admin'){
+
+            return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to update this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
+
+            //req.user.id return logined user data(id which belong to User Model(table)) and we compare this id with the Bootcamp Model User id(foregin key) because we set a relationship bw Bootcamp and User Model i.e we add User column(value is user id) in Bootcamp ,which specify that this Bootcamp is created by This User(Owner).
+        }
+
+        bootcamp = await Bootcamp.findOneAndUpdate(req.params.bootcampId , req.body , {
+                      new : true,
+            runValidators : true
+        })
+
         res.status(200).json({success : true ,data : bootcamp});
  
 });
@@ -106,6 +136,13 @@ exports.deleteBootcamp =asyncHandler(async (req , res , next)=>{
             return next(new ErrorResponse(`Bootcamp not found withid of ${req.params.bootcampId} `,404));
         }
 
+        //Make sure the logged in User who try to perform delete operation is Owner of This Bootcamp or not if not then show error.
+        if(bootcamp.user.toString() != req.user.id && req.user.role != 'admin'){
+
+            return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to delete this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
+        }
+
+        //only owner and admin can perfrom delete action
         bootcamp.remove();//this change for to trigger or work call that pre middleware (delete courses)
         res.status(200).json({success: true , data :{}})
 });
@@ -153,6 +190,13 @@ exports.getBootcampByRadius =asyncHandler(async (req , res , next)=>{
         return next(new ErrorResponse(`Bootcamp not found with id ${req.params.bootcampId}`),404);
     }
 
+    //if owner of Bootcamp then only upload a photo else return an error
+    if(bootcamp.user.toString() !== req.user.id && req.user.role !=='admin'){
+
+        return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to update this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
+    }
+    //if error then further code not executed.
+
     //check if file not uploaded bec..it doest contain object(file)
     if(!req.files){
         return next(new ErrorResponse(`Please enter file for upload`,400));
@@ -194,8 +238,5 @@ exports.getBootcampByRadius =asyncHandler(async (req , res , next)=>{
             data : file.name
         })
     }) 
-
-   
-
 
  });

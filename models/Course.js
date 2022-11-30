@@ -36,6 +36,11 @@ const CourseSchema = new mongoose.Schema({
         type : mongoose.Schema.ObjectId,
         ref : 'Bootcamp',
         required : true
+    },//every course is associated with some specific Bootcamp.so this relation ship we provide here by adding Bootcamp id in course..so that we idenfiy that this course belongs to this bootcamp
+    user:{
+        type : mongoose.Schema.ObjectId,
+        ref  : 'User',
+        required : true
     }
 });
 
@@ -75,7 +80,7 @@ CourseSchema.post('save' ,function(){
     this.constructor.getAverageCost(this.bootcamp);//here we pass this.bootcamp i.e the field contain bootcamp Id
 });
 
-//Call getAverageCost before remove
+//Call getAverageCost before remove..because if any course remove then again calcualte average
 CourseSchema.pre('remove' ,function(){
     //calculate average cost before remove course
     this.constructor.getAverageCost(this.bootcamp);

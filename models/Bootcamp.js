@@ -105,12 +105,17 @@ const BootcampSchema = mongoose.Schema({
     createdAt : {
         type : Date,
         default : Date.now //current date 
-    }
+    },
+    user :{
+        type : mongoose.Schema.ObjectId,
+        ref  : 'User',
+        required : true
+    }//we add user column (value is user id)so that we get to know this bootcamp owner is this user
 },{
     toJSON : { virtuals: true},
     toObject : {virtuals: true}
 })
-//so we add here another object(here virtual course field added automatically and we add toJSON : true because it should add json data there) in schema for Virtual attribute Courses(for Reverse Populate)
+//so we add here another object(here virtual course field added automatically and we add toJSON : true because it should add json data there) in schema for Virtual attribute Courses(for Reverse Populate)..this will not add column permanantly ..it only add temporarily to show on front end
 
 //slugify (Create a Bootcamp slug from name)..like we create our own middleware ..mongoose has built in middleware..i.e .pre()..so slugify function convert Devcentral Bootcamp to devcentral-bootcamp
 BootcampSchema.pre('save' , function(next){

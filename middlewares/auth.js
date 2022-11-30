@@ -5,14 +5,14 @@ const ErrorResponse = require('../utils/errorResponse');
 const User = require('../models/User');
 
 //Protect routes we write a function..basically this function is to validate the token sent from server at the time of login user..so this function validate that ony login user that ony do the creation of Bootcamp create course..etc
-//so here we extract the id from token 
+//so here we extract the id from token (basically it checks whether it valid User or not through token sent at the time of login) also we get know that ,we has to login first then go to further routes
 exports.protect = asyncHandler(async(req , res , next) =>{
 
     let token;
 
-    let authorization = req.headers.authorization
+    let authorization = req.headers.authorization; // so this auhorization and Authorization are same..this will automatically added to the Postman Header Section tab(this are hidden)..click on hidden above the Header tab..previously we add manually but now using environment variable this will set automatically when we hit request
     if(authorization && authorization.startsWith('Bearer')){
-        
+        console.log('Inside auth--',authorization);
         token = authorization.split(' ')[1]; //req.headers.authorization=Bearer <token>..so we use split method so that we get token from second position ..split method split string by space and store it in an array..therefore [1]
     }
     
@@ -43,7 +43,7 @@ exports.protect = asyncHandler(async(req , res , next) =>{
         next();//this next we transfer control and call to controllers method
 
     }catch(err){
-        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined)" , 401));
+        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined) means token modified" , 401));
     }
 
 })
@@ -60,7 +60,8 @@ exports.authorize = (...roles)=> {
         {
              return next(new ErrorResponse(`User Role ${req.user.role} unauthorized to acccess this route` , 403));//403 forbidden error
         }
-        next();//this will call controller method with here req,res ojects 
+        next();//this will call controller method with here req,res ojects
+        //example..delete(protect , authorize('publisher' , 'admin') , deleteBootcamp)..here we can see after protect call complete it also contain next() this next will attched req,res objects and transfer to authorize funtion ..same authorize call and trasfer control to deleteBootcamp
     }
    
 }

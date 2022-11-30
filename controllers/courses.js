@@ -64,11 +64,14 @@ exports.getCourse = asyncHandler(async (req,res,next)=>{
 });
 
 //@desc      Add a New Course
-//@route     /api/v1/bootcamps/:bootcampId/courses
+//@route     POST(method) /api/v1/bootcamps/:bootcampId/courses
 //@access    Private
 exports.addCourse =asyncHandler(async (req,res,next)=>{
 
-    req.body.bootcamp = req.params.bootcampId; //as we know in course model there is bootcamp field(forign key) so we assign that bootcamp field by taking out bootcampId from Postman specified in url post request(/api/v1/bootcamps/:bootcampId/courses)
+    req.body.bootcamp = req.params.bootcampId; //as we know in course model there is bootcamp field(forign key) so we assign that bootcamp field by taking out bootcampId from Postman, specified in url post request(/api/v1/bootcamps/:bootcampId/courses)
+
+    //for Course Ownership
+    req.body.user = req.user.id //this line add user property with value in body 
 
     const bootcamp = await Bootcamp.findById(req.params.bootcampId) //..here bootcampId the name is specified in route and it should match with here also bec at the time of adding course we first specify the url request and hence it first go into the route file then controller file 
 
@@ -77,7 +80,14 @@ exports.addCourse =asyncHandler(async (req,res,next)=>{
     {
         return next(new ErrorResponse(`No Bootcamp found with id ${req.params.bootcampId}`,404));
     }
-    const course = await Course.create(req.body); //req.body =req.body.bootcamp +req.body
+
+    //Make sure adding a course is owner of a Bootcamp Because Courses added by the Bootcamp ownwer or admin only
+    if(bootcamp.user.toString() !== req.user.id && req.user.role !== 'admin'){
+        return next(new ErrorResponse(`The logged in user with id ${req.user.id} is not authorize to add a Course to the Bootcamp or not an admin`));
+    }
+
+    //else authorize user (logged in User i.e Owner of the Bootcamp) can add course
+    const course = await Course.create(req.body); //req.body = req.body + req.body.bootcamp
     res.status(201).json({success : true,data : course});
 });
 
@@ -94,6 +104,11 @@ exports.updateCourse =asyncHandler(async (req,res,next)=>{
         return new ErrorResponse(`Course not found with id ${req.params.courseId}`,404);
     }
     
+    //Make sure that user try to update is owner of a Bootcamp Because Courses updated by the Course ownwer or admin only..If not following error will return inside if Statment Now this time we take (course.user.toString) instead of (bootcamp.user.toString)..after adding column user in addCourse now user column availabe in for all to updaet delete
+    if(course.user.toString() !== req.user.id && req.user.role !== 'admin'){
+        return next(new ErrorResponse(`The logged in user with id ${req.user.id} is not authorize to update a Course with Course id ${course.id} or not an admin`));
+    }
+
     course = await Course.findByIdAndUpdate(req.params.courseId ,req.body,{new : true,
     runValidators : true});
 
@@ -102,7 +117,7 @@ exports.updateCourse =asyncHandler(async (req,res,next)=>{
 });
 
 //@desc     Delete a Course by Specifying id
-//@route    /api/v1/courses/:courseId
+//@route    DELETE(method) /api/v1/courses/:courseId
 //@access   Private
 exports.deleteCourse =asyncHandler(async (req,res,next)=>{
 
@@ -110,6 +125,11 @@ exports.deleteCourse =asyncHandler(async (req,res,next)=>{
     if(!course){
 
         return new ErrorResponse(`Course not found with id ${req.params.courseId}`,404);
+    }
+
+     //Make sure that user try to update is owner of a Bootcamp Because Courses added by the Bootcamp ownwer or admin only..If not following error will return inside if Statment Now this time we take (course.user.toString) instead of (bootcamp.user.toString)..after adding column user in addCourse now user column availabe in for all to updaet delete
+     if(course.user.toString() !== req.user.id && req.user.role !== 'admin'){
+        return next(new ErrorResponse(`The logged in user with id ${req.user.id} is not authorize to update a Course with Course id ${course.id} or not an admin`));
     }
    await course.remove();
    res.status(200).json({

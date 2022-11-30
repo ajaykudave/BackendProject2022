@@ -9,6 +9,7 @@ dotenv.config({ path: './config/config.env'});
 //load models
 const Bootcamp = require('./models/Bootcamp');
 const Course   = require('./models/Course');
+const User     = require('./models/User');
 
 //connect to db
 mongoose.connect(process.env.MONGO_URI, {
@@ -18,11 +19,12 @@ mongoose.connect(process.env.MONGO_URI, {
      // useUnifiedTopology : true so these  useCreateIndex and useFindAndModify,..options are depricated in new  version of mongoose
  });
 
- //Read JSON files
- const bootcamps = JSON.parse(fs.readFileSync(`${__dirname}/_data/bootcamps.json`,'utf8'));//fs.readFIleSync()method Synhcronously read entire content of file.synchronously means line by line(in sequence)
+ //Read JSON files(bootcamps,courses,users)
+ const bootcamps = JSON.parse(fs.readFileSync(`${__dirname}/_data/bootcamps.json`,'utf8'));//fs.readFIleSync()method Synhcronously read entire content of file.synchronously means line by line(in sequence) and convert string into Object because JS works on Objects(Understand objects)
 
  const courses   = JSON.parse(fs.readFileSync(`${__dirname}/_data/courses.json`,'utf8'));
 
+ const users     = JSON.parse(fs.readFileSync(`${__dirname}/_data/users.json`,'utf8'));
  console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
 
  //put or import into db
@@ -31,6 +33,7 @@ mongoose.connect(process.env.MONGO_URI, {
     try{
             await Bootcamp.create(bootcamps);
             await Course.create(courses); //we comment courses because now from average cost section we now able to create course from Postman rather than reading from json file of course..now section 6.2 photo upload we again uncomment this line..so that we insert data from our json file..so delete first then insert again
+            await User.create(users);
             console.log('Data Imported...'.green.inverse);//message with green color
             process.exit();
     }catch(err){
@@ -44,6 +47,7 @@ mongoose.connect(process.env.MONGO_URI, {
     try{
             await Bootcamp.deleteMany();
             await Course.deleteMany();
+            await User.deleteMany();
             console.log('Data Destroyed...'.red.inverse);
             process.exit();
     }catch(err){
