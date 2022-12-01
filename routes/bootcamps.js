@@ -46,7 +46,8 @@ router
 .route('/:bootcampId')
 .put(protect , authorize('publisher' , 'admin') , upadteBootcamp)
 .delete(protect , authorize('publisher' , 'admin') , deleteBootcamp)
-.get(protect , authorize('publisher' , 'admin') , getBootcampById);
+.get(getBootcampById);
+//.get(protect , authorize('publisher' , 'admin') , getBootcampById);
 
 
 

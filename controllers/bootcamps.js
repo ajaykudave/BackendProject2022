@@ -59,15 +59,18 @@ exports.createBootcamp =asyncHandler( async (req , res , next) =>{
         // res.status(400).json({success : false})
         console.log(`Currently login User: ${req.user.id}`)//we get this user data(object) from our protect middleware(due to next() call)
 
-        //Add User to req.body
+        //Add User column to req.body(i.e added user column into Bootcamp model)
         req.body.user = req.user.id; //basically we initializ the user column with user id..before authorization we dont have user column but once we completed Authorization then now we add User column..refer Bootcamp.json file there we can see user : value present
 
-        //If User is Publisher role then it can add only one Bootcamp but admin can add more than one Bootcamps also we check if we got same Bootcamp associated with login user then also return an error
+        //If User is Publisher role then it can add only one Bootcamp but admin can add more than one Bootcamps also we check if we got same Bootcamp associated with login user then also return an error(Only one Bootcamp per Publisher).No duplicates 
 
-        const publishedBootcamp = await Bootcamp.findOne({ user : req.user.id});
+        const publishedBootcamp = await Bootcamp.findOne({ user : req.user.id}); //then find Bootcamp where user =currently login user id
 
         if(publishedBootcamp && req.user.role !== 'admin'){
-            return next(new ErrorResponse(`The User with Id ${req.user.id} has already published a Bootcamp(i.e it Punlisher role)` , 400));
+            return next(new ErrorResponse(`The User with Id ${req.user.id} has already published a Bootcamp(i.e it Publisher role)` , 400));
+
+            //we check req.user.role !== admin ..if it true means user role is PUBLISHER and Publisher can create only one Bootcamp But Admin Can Create more than One Bootcamp.
+            //And if publishedBootcamp means already found Bootcamp  then also show above error
         }
         
         //else if admin then add many bootcamps
@@ -104,7 +107,7 @@ exports.upadteBootcamp = asyncHandler(async (req , res , next)=>{
 
             return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to update this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
 
-            //req.user.id return logined user data(id which belong to User Model(table)) and we compare this id with the Bootcamp Model User id(foregin key) because we set a relationship bw Bootcamp and User Model i.e we add User column(value is user id) in Bootcamp ,which specify that this Bootcamp is created by This User(Owner).
+            //***IMP req.user.id return logined user data(id which belong to User Model(table)) and we compare this id with the Bootcamp Model User id(foregin key) because we set a relationship bw Bootcamp and User Model i.e we add User column(value is user id) in Bootcamp ,which specify that this Bootcamp is created by This User(Owner).***
         }
 
         bootcamp = await Bootcamp.findOneAndUpdate(req.params.bootcampId , req.body , {
@@ -139,7 +142,9 @@ exports.deleteBootcamp =asyncHandler(async (req , res , next)=>{
         //Make sure the logged in User who try to perform delete operation is Owner of This Bootcamp or not if not then show error.
         if(bootcamp.user.toString() != req.user.id && req.user.role != 'admin'){
 
-            return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to delete this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
+            return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to delete this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401));
+
+             //***IMP req.user.id return logined user data(id which belong to User Model(table)) and we compare this id with the Bootcamp Model User id(foregin key) because we set a relationship bw Bootcamp and User Model i.e we add User column(value is user id) in Bootcamp ,which specify that this Bootcamp is created by This User(Owner).****
         }
 
         //only owner and admin can perfrom delete action
@@ -193,7 +198,9 @@ exports.getBootcampByRadius =asyncHandler(async (req , res , next)=>{
     //if owner of Bootcamp then only upload a photo else return an error
     if(bootcamp.user.toString() !== req.user.id && req.user.role !=='admin'){
 
-        return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to update this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401))
+        return next(new ErrorResponse(`The User with id ${req.user.id} not authorize to update this Bootcamp(i.e logged in User is not an Owner of this Bootcamp or not an Admin)`,401));
+
+         //****IMP req.user.id return logined user data(id which belong to User Model(table)) and we compare this id with the Bootcamp Model User id(foregin key) because we set a relationship bw Bootcamp and User Model i.e we add User column(value is user id) in Bootcamp ,which specify that this Bootcamp is created by This User(Owner).
     }
     //if error then further code not executed.
 
