@@ -6,25 +6,26 @@ const errorHandler = (err,req,res,next) =>{
 
     error.message = err.message ;
     // we log error..err is  object
-    console.log(err); // console.log(err.stack.red)stack is property of err object
+    console.log('errrrrr',err); // console.log(err.stack.red)stack is property of err object
    
     //Mongoose Bad Object Id then Cast error
     if(err.name === 'CastError')
     {
-        console.log(err.name);
+        console.log('Inside CastError If Block',err.name);
         const message = `Bootcamp not found with id of ${err.value}`;
         error = new ErrorResponse(message,404);
     }
 
     //mongoose duplicate key 
     if(err.code === 11000){
+        console.log('Inside Duplicate Key If Block');
         const message = 'Duplicate field value entered.';
         error = new ErrorResponse(message,400);
     }
 
     //Mongoose validation error
     if(err.name === 'ValidationError'){
-
+        console.log('Inside ValidationError If Block',err.name);
         const message =Object.values(err.errors).map(val => val.message);
        //const message =Object.values(err.errors) this also work same as using map
         error = new ErrorResponse(message ,400);
