@@ -1,6 +1,8 @@
+const crypto = require('crypto');
 const ErrorResponse = require('../utils/errorResponse');
 const asyncHandler = require('../middlewares/async');
 const User = require('../models/User.js')
+const sendEmails = require('../utils/sendEmail'); //this return function and store in sendEmails variable which further act as function .
 
 
 //@desc     Register user
@@ -69,6 +71,160 @@ exports.login = asyncHandler(async (req , res , next)=>{
     sendTokenResponse(user , res , 200)
 })
 
+//@desc     Get Current Logged In User
+//@route    GET and api/v1/auth/me
+//@access   Private(because of logged in User access)
+exports.getMe =asyncHandler(async (req , res , next) =>{
+
+    //const user = await User.findById(req.user.id); //we attached user(currently login ) to req object from protect middleware
+
+    const userFromProtect = req.user;
+
+    res.status(200).json({
+        success : true,
+        data : userFromProtect
+    })
+
+})
+//****the forget password and reset password are related i.e in order to reset password we first need to forget password then forget password sent a link which contain reset token and that token is required in resetPassword bec we check that token with db token if match then only it allow to reset password(here authentication check i.e only the valid user can reset password)  ****
+
+//@desc     Forget Password
+//@route    POST and api/v1/auth/forgetPassword
+//@access   Public 
+exports.forgetPassword = asyncHandler(async (req,res,next)=>{
+
+    const user = await User.findOne({ email : req.body.email});//find one document(record) where emailId= "value";
+
+    //if there is no User got in db corrosponded to the specified email then show Error
+    if(!user){
+        return next(new ErrorResponse(`There is no such User in db corrosponds to the email ${req.body.email}`));
+    }
+    //if got User then bring reset token and add that value to resetPassword field in User Model(hash value)
+    const resetToken = user.getResetPasswordToken();//this function is called on user model object or instance ..so it s non static function defined in model(like in class)
+    console.log('reset Password token',resetToken );
+
+    await user.save({ validateBeforeSave : false});//this will save the document with resetpassword and resetexpire value 
+
+    //create reset Url
+    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/resetPassword/${resetToken}`;
+
+    const message = `You are recieving this email because you (or someone else) has requested the reset of a password . Please make a PUT request to: \n\n ${resetUrl}`;
+
+    //Now call sendEmail function.
+    try {
+        await sendEmails({
+            email : user.email,
+            subject : 'Password reset token ',
+            message : message
+        });
+        //after successfully sent ..goto mailtrap and see mail
+
+        res.status(200).json({
+        
+            success : true,
+            data : 'Email Send.'
+        })
+
+    } catch (error) {
+        console.log(error);
+        //if some error caught then remove data i,e resetPaswordToken and resetPasswordTokenExpire
+        user.resetPasswordToken= undefined;
+        user.resetPasswordExpire = undefined;
+
+        await user.save({ validateBeforeSave : false });
+
+        return next(new ErrorResponse('Email Could not be send' , 500));
+    }
+
+   /*  res.status(200).json({
+        success : true,
+        data : user,
+        resetToken : resetToken
+    }) */
+})
+
+//****the forget password and reset password are related i.e in order to reset password we first need to forget password then forget password sent a link which contain reset token and that token is required in resetPassword bec we check that token with db token if match then only it allow to reset password(here authentication check i.e only the valid user can reset password)  ****
+//@desc     Reset Password
+//@route    PUT and api/v1/auth/resetPassword/:resetToken
+//@access   Public 
+exports.resetPassword = asyncHandler(async (req , res , next)=>{
+
+    //first we need to take out resettoken from url and hash it because in database we store that token in hash format so after hash we match both token 
+    //Get hash token
+    const resetPasswordTokenValue = crypto.createHash('sha256').update(req.params.resetToken).digest('hex');
+
+    //now we find the user where resetPasswordToken= value
+    const user = await User.findOne({
+        resetPasswordToken : resetPasswordTokenValue,
+        resetPasswordExpire : { $gt : Date.now() },
+
+    });//findOne find one user where resetPasswordToken=value and resetPasswordExpire=value..gt operator check that value is greater than current time because we add 10 min for token expire..here we actually mathc the current token i.e copy from forget password sent email link with the db contain resetPasswordtoken value which save in model at the time getResetPasswordToken() called from controller
+
+    //if user not found
+    if(!user){
+        return next(new ErrorResponse('Invalid Token ' ,400));//bad request
+    }
+
+    //if useer got
+    user.password = req.body.password ;
+    user.resetPasswordToken = undefined;//once we set a new password there is no need ,this field so we need to remove therefore we initialized to undefined
+    user.resetPasswordExpire = undefined;
+
+    await user.save();//so after save we need to sent token as a response
+    
+    sendTokenResponse(user , res , 200);
+
+})
+
+//@desc     Update User Details(except password..for password update there is separate route)
+//@route    PUT and /api/v1/auth/updateUserDetails
+//@access   Private(Bec logged in User can only update)
+exports.updateUserDetails = asyncHandler(async (req , res , next)=>{
+
+    //we dont provide req.body directly in findbyidandUpdate method because suppose if someone accidently add password for update..so to avoid this we actually provide fields object which contain specific field and value to be update
+    //so in Postman provide json object which contain fileds and value ,except password field and value
+
+    const fieldsToUpdate ={
+
+        name  : req.body.name,
+        email : req.body.email
+    };
+    console.log(`Id: ${req.user.id}`);//this req.user.id got from protect..as we also check only logged in user can update details..
+    const user = await User.findByIdAndUpdate(req.user.id , fieldsToUpdate ,{
+        new : true,
+        runValidators : true
+    });
+    
+    res.status(200).json({
+        success : true,
+        data : user,
+        message : "User Details Updated.!"
+    })
+});
+
+//@desc     Update Password
+//@route    PUT and api/v1/auth/updatePassword
+//@access   Private
+exports.updatePassword =asyncHandler(async (req , res , next)=>{
+
+    //const user = await User.findById(req.user.id); this line returns User Object(Promise) details of user ,except password because in User Model we set password :{ select : false} validation..so in order fetch password also we need to specify  externally select password ..as following 
+     const user = await User.findById(req.user.id).select('+password');
+    console.log('!(await user.matchPassword(req.body.currentPassword)',!(await user.matchPassword(req.body.currentPassword)));
+     //check if current password match wwith db encrpted password..chcek if not match..i.e false then it true
+     if(!(await user.matchPassword(req.body.currentPassword))){
+
+        return next(new ErrorResponse('Password is incorrect', 401));
+     }
+
+     //if matched then set new password to logged in user and sent token in res just like in reset password
+     user.password = req.body.newPassword;
+     await user.save()
+
+     sendTokenResponse(user , res , 200);
+})
+
+
+//This is Helper function helps controllers function in some calculations. 
 //Get token from model(by invoking getSignedJwtToken() function) and put that token into the cookie and sent that cookie to client from server side(here we define a arrow function below)
 const sendTokenResponse = (user , res , statusCode) => {
 
@@ -103,20 +259,3 @@ const sendTokenResponse = (user , res , statusCode) => {
         /* why we use cookie for storing Web token?
         ans- Storing a web token in local storage is not good due to security issue..so storing in cookie is better than storing in a local Storage */
 }
-
-//@desc     Get Current Logged In User
-//@route    GET and api/v1/auth/me
-//@access   Private(because of logged in User access)
-exports.getMe =asyncHandler(async (req , res , next) =>{
-
-    //const user = await User.findById(req.user.id); //we attached user(currently login ) to req object from protect middleware
-
-    const userFromProtect = req.user;
-
-    res.status(200).json({
-        success : true,
-        data : userFromProtect
-    })
-
-})
-
