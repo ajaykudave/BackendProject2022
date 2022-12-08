@@ -23,7 +23,7 @@ exports.protect = asyncHandler(async(req , res , next) =>{
 
     //now validate token that actual token that sent at the time of login to user..if it got token then only he /she do further operation in application..like when we got OTP then only we proceed transaction
     if(!token){
-        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined)" , 401));
+        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined) means check whether you select token in Authorization tab(select bearer token)" , 401));
     }
     
     //if token variable contains any data
