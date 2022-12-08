@@ -20,7 +20,7 @@ const morgan = require('morgan');
 const fileupload = require('express-fileupload');
 const path       = require('path');
 
-//for generting cookie..this middleware return a function.so after cookieParser() round bracket add
+//for generting cookie..this middleware return a function.so after cookieParser() round bracket added
 const cookieParser = require('cookie-parser');
 
 //colors
@@ -32,7 +32,7 @@ const errorHandler = require('./middlewares/error.js');
 const connectDB = require('./config/db.js');
 
 
-//in order to use that variable we need to load that config .env file using dotenv 
+//in order to use that variable we need to load that config .env file using dotenv or by defination dotenv.config() will load .env file into process.env ..that why we use process.env to access environment variables
 dotenv.config({ path : './config/config.env'});
 //console.log(process.env.PORT);
 
