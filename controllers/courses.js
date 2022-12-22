@@ -18,7 +18,7 @@ exports.getCourses = asyncHandler(async (req,res,next)=>{
        const courses =await Course.find({bootcamp :req.params.bootcampId});//we find all courses where bootcampId=vlaue ..we pass object
         //query =Course.find(req.params.bootcampId);//this also work
 
-        //if course of specific bootcamp so directly return response no need pagination here
+        //if course of specific bootcamp so directly return response no need pagination here..so it will not go to next line code (end the code)..this is known as early response
         return res.status(200).json({
             success : true,
             count : courses.length,
@@ -37,7 +37,7 @@ exports.getCourses = asyncHandler(async (req,res,next)=>{
 
         /* also there is reverse populate .i.e for each bootcamp we want to show their provided courses list..so for that we need reverse populate using virtual (bec each bootcamp has multiple courses(One to Many.) but each Course doesnot have multiple Bootcamp) ..for this we need to change in Bootcamp controller and model file*/
         //for all courses we use pagination
-        res.status(200).json(res.advancedResults);
+        res.status(200).json(res.advancedResults);// here res.advancedResults come from middleware..
     }
 
 });
@@ -98,15 +98,18 @@ exports.updateCourse =asyncHandler(async (req,res,next)=>{
 
     let course = await Course.findById(req.params.courseId);
 
-    //if we put incorrect id and we know we unable to get bootcamp with incorrect id so findById return undefined
+    //if we put incorrect id and we know we unable to get bootcamp with incorrect id so findById return undefined..!course means undefined value in course variable
     if(!course){
 
         return new ErrorResponse(`Course not found with id ${req.params.courseId}`,404);
     }
     
+    //Make sure course belong to user(publisher)  or user is admin(bec admin can do anything)
     //Make sure that user try to update is owner of a Bootcamp Because Courses updated by the Course ownwer or admin only..If not following error will return inside if Statment Now this time we take (course.user.toString) instead of (bootcamp.user.toString)..after adding column user in addCourse now user column availabe in for all to updaet delete
     if(course.user.toString() !== req.user.id && req.user.role !== 'admin'){
         return next(new ErrorResponse(`The logged in user with id ${req.user.id} is not authorize to update a Course with Course id ${course.id} or not an admin`));
+
+        //here we check owner(user )from course i.e user id!=== logined user id from protect middleware if not same  && role not admin then it show error
     }
 
     course = await Course.findByIdAndUpdate(req.params.courseId ,req.body,{new : true,
