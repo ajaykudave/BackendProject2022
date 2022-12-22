@@ -12,7 +12,11 @@ const errorHandler = (err,req,res,next) =>{
     if(err.name === 'CastError')
     {
         console.log('Inside CastError If Block',err.name);
-        const message = `Bootcamp not found with id of ${err.value}`;
+        /* const message = `Bootcamp not found with id of ${err.value}`; */ 
+        const message = `Resource not found with id of ${err.value}`;//we change this at the time of single review fetch..when i put wrong id eg.1 then it will be CASTERROR so it should display Review not found but it display Bootcamp not found which wrong ..so in order to work for both Review and bootcamp we write Resource not found.
+
+        /* CAST ERROR occur when _id does not match what Mongoose expects as "format" ..when i put wrong review ,bootcamp or course id or any id then it will give cast error */
+
         error = new ErrorResponse(message,404);
     }
 
