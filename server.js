@@ -8,6 +8,8 @@ const dotenv  = require('dotenv');
 const bootcamps = require('./routes/bootcamps.js');
 const courses   = require('./routes/courses.js');
 const auth      = require('./routes/auth.js');
+const users     = require('./routes/users.js');
+const reviews   = require('./routes/reviews.js');
 
 /* const logger = require('./middlewares/loggers.js');
 so currently we use morgan logger(external)..this commented is our own custom logger
@@ -69,6 +71,9 @@ app.use(express.static(path.join(__dirname , 'public')))//static is built in exp
 app.use('/api/v1/bootcamps' , bootcamps);
 app.use('/api/v1/courses', courses);
 app.use('/api/v1/auth', auth);
+app.use('/api/v1/users', users);
+app.use('/api/v1/reviews', reviews);
+
 
 //calling or using errorHandler
 app.use(errorHandler);

@@ -10,6 +10,7 @@ dotenv.config({ path: './config/config.env'});
 const Bootcamp = require('./models/Bootcamp');
 const Course   = require('./models/Course');
 const User     = require('./models/User');
+const Review   = require('./models/Review');
 
 //connect to db
 mongoose.connect(process.env.MONGO_URI, {
@@ -27,6 +28,7 @@ mongoose.connect(process.env.MONGO_URI, {
  const users     = JSON.parse(fs.readFileSync(`${__dirname}/_data/users.json`,'utf8'));
  console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
 
+ const reviews   = JSON.parse(fs.readFileSync(`${__dirname}/_data/reviews.json`,'utf-8'));
  //put or import into db
  const importData = async ()=>{
 
@@ -34,6 +36,7 @@ mongoose.connect(process.env.MONGO_URI, {
             await Bootcamp.create(bootcamps);
             await Course.create(courses); //we comment courses because now from average cost section we now able to create course from Postman rather than reading from json file of course..now section 6.2 photo upload we again uncomment this line..so that we insert data from our json file..so delete first then insert again
             await User.create(users);
+            await Review.create(reviews);
             console.log('Data Imported...'.green.inverse);//message with green color
             process.exit();
     }catch(err){
@@ -48,6 +51,8 @@ mongoose.connect(process.env.MONGO_URI, {
             await Bootcamp.deleteMany();
             await Course.deleteMany();
             await User.deleteMany();
+            await Review.deleteMany();
+            
             console.log('Data Destroyed...'.red.inverse);
             process.exit();
     }catch(err){
