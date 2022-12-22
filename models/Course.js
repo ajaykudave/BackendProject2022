@@ -4,7 +4,7 @@ const CourseSchema = new mongoose.Schema({
 
     title:{
         type : String,
-        trim : true,
+        trim : true,//it will remove leading and trailing spaces..
         required : [true ,'Please add a course title']
     },
     description:{
