@@ -8,17 +8,19 @@ console.log('Inside Route file');
 const {getBootcamps,getBootcampById,createBootcamp,upadteBootcamp,deleteBootcamp, getBootcampByRadius,uploadPhotoForBootcamp} = require('../controllers/bootcamps.js'); //first dot tell out from routes folder then 2nd dot for root folder then controllers folder
 
 //**so here we pass Bootcamp instance as argument for model parameter in advancedResults middleware function(model,populate)
-const Bootcamp = require('../models/Bootcamp.js')
-const advancedResults = require('../middlewares/advancedResults.js');
+const Bootcamp = require('../models/Bootcamp.js');
 
 //protect middleware
 const { protect , authorize} = require('../middlewares/auth.js');//now put this protect in createBootcamp route before controller method name
+const advancedResults = require('../middlewares/advancedResults.js');
 
 //Include other Resource routers
 const courseRouter = require('./courses.js');
+const reviewRouter = require('./reviews.js');
 
 //Re-route(route forwarding) into other resource routers..means from bootcamps route we go to course route
 router.use('/:bootcampId/courses' , courseRouter);//--look like /api/v1/bootcamps/:123344/courses..this will go to the course route file and where it add or merge automaticaly at router.route(/here).route(/:bootampId).get(courses)
+router.use('/:bootcampId/reviews' , reviewRouter);//this will forwarded to review router file and there dynamically added line..router.route('/:bootcampId/reviews').get(getReviews)..this will fetch review associated with bootcampId
 
 router.route('/radius/:zipcode/:distance').get(getBootcampByRadius);
 
