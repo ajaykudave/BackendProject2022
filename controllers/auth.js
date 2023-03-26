@@ -69,7 +69,28 @@ exports.login = asyncHandler(async (req , res , next)=>{
         webTokenFromServer : token
     }) */
     sendTokenResponse(user , res , 200)
+});
+
+//@desc     Logout user / And Clear Cookie
+//@route    GET /api/v1/auth/logout
+//@access   Private
+exports.logout = asyncHandler(async (req , res , next)=>{
+    //here when we logout then cookie also get destroy..by fetch that cookie and set it to none value
+    res.cookie('token' , 'none' ,{
+        expires : new Date(Date.now() + 10 * 1000), //10 min
+        httpOnly : true
+    });
+
+    res.status(200).json({
+        success : true,
+        data : {}
+    })
+    //step1)first login
+    //step2)now sent request to fetch login user or any request to any protect route(i.e which need to first login)..so it fetch data because we have token got from server and saved either in header or cookies
+    //step3)now make request to logout ourself..then it return 200 response with no data and it clear or delete token from  cookies..and note dont select bearer token in Authorization at same time..now we use token form Cookies
+    //step4)Now again move to any protected route and sent request ..it will give response that you are not authorize to access this route means we are actually logout beacause token : none or undefined..when we login then we have token and if we have token then only we give access to this routes
 })
+
 
 //@desc     Get Current Logged In User
 //@route    GET and api/v1/auth/me
