@@ -8,22 +8,28 @@ const User = require('../models/User');
 //so here we extract the id from token (basically it checks whether it valid User or not through token sent at the time of login) also we get know that ,we has to login first then go to further routes
 exports.protect = asyncHandler(async(req , res , next) =>{
 
+    /* Note there is 2 ways to get token --1)from bearer token 2)cookies..Use one of them either and comment out one part..so i comment out else part cookies */
     let token;
 
     let authorization = req.headers.authorization; // so this auhorization and Authorization are same..this will automatically added to the Postman Header Section tab(this are hidden)..click on hidden above the Header tab..previously we add manually but now using environment variable this will set automatically when we hit request
     if(authorization && authorization.startsWith('Bearer')){
         console.log('Inside auth--',authorization);
-        token = authorization.split(' ')[1]; //req.headers.authorization=Bearer <token>..so we use split method so that we get token from second position ..split method split string by space and store it in an array..therefore [1]
-    }
-    
+        token = authorization.split(' ')[1]; //req.headers.authorization=Bearer <token>.. ,we get token from second position ..split method split string by space and store it in an array..therefore [1]
+        //eg. String authorization =" bearer <token value>";//after split it will convert string into an array of strings
+        //authorization =["bearer" , "<token>"];therefore [1]
+    }//the same above task can be achieved by cookies..if we got token from server then that we also get from cookie beasue we also add functinality that store token inside cookies..so we get token from cookie even if authorization is not selected bearer token..so in that time it come to else part and check req.cookies.token if true then set token =  token
    /*  else if(req.cookies.token)
     {
         token = req.cookies.token;
+
+        //it first check if condition if it false then it check else
+        //so when we login the token sent and save in cookie part(in postman )same like in browser..bec postman acts as our client or browser and it attached to every request..i.e every protected request get,update ,delete they use token from cookie..no need to select bearer token in Authorization tab or menu
     } */
+    /* IF WE WANT to take out token from Authorization header then comment out else part of cookies */
 
     //now validate token that actual token that sent at the time of login to user..if it got token then only he /she do further operation in application..like when we got OTP then only we proceed transaction
     if(!token){
-        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined) means check whether you select token in Authorization tab(select bearer token)" , 401));
+        return next(new ErrorResponse("Not Authorized to access this route(Because token = undefined) means check whether you select token in Authorization tab(select bearer token)" , 401));
     }
     
     //if token variable contains any data
@@ -43,7 +49,7 @@ exports.protect = asyncHandler(async(req , res , next) =>{
         next();//this next we transfer control and call to controllers method
 
     }catch(err){
-        return next(new ErrorResponse("Not Authorize to access this route(Because token = undefined) means token modified" , 401));
+        return next(new ErrorResponse("Not Authorized to access this route(Because token = undefined) means token modified" , 401));
     }
 
 })
