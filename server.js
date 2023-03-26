@@ -25,6 +25,24 @@ const path       = require('path');
 //for generting cookie..this middleware return a function.so after cookieParser() round bracket added
 const cookieParser = require('cookie-parser');
 
+/* ----API SECURITY PACKAGES----START */
+
+//For prevention of NoSQL injection
+const mongoSanitize = require('express-mongo-sanitize');
+//For Security it add headers automatically
+const helmet        = require('helmet');
+//For XSS 
+const xssClean      = require('xss-clean');
+//For Rate Limiting
+const rateLimit     = require('express-rate-limit')
+//For Http params pollution(HPP)
+const hpp           = require('hpp');
+
+//To connect Our Api developed in one domain with front end developed in other domain
+const cors          = require('cors');
+
+/* ----API SECURITY PACKAGES----END */
+
 //colors
 const colors = require('colors');
 //customErrorHandler
@@ -61,6 +79,29 @@ if(process.env.NODE_ENV === 'development')
 
 //we use here because before request come to server we need to first use this functionality after that if any route request come then chnages(result) comes in piture..suppose addition =a+b after that we print addi then we get perfect result..but suppose we print addition result even before result was not prepare...so keep in mind this
 app.use(fileupload());
+
+//Sanitize data
+app.use(mongoSanitize());
+
+//Set security headers
+app.use(helmet());
+
+//Prevent cross side scripting attacks
+app.use(xssClean());
+
+//Rate Limiting for routes calls..so no one can intentionally busy any api resource(eg.forget password route)
+const limiter = rateLimit({
+    windowMs : 10 * 60 * 1000, // 10 min
+    max      : 100
+});
+//basically this meaning is that per 10 min there will be ony max count request can be made by one or same client to api call(or for routes)
+app.use(limiter);
+
+//To prevent Http Params Pollution 
+app.use(hpp());
+
+//Cors..to connect our Api with other domain things
+app.use(cors());
 
 app.use(express.static(path.join(__dirname , 'public')))//static is built in express middleware function which serves static files..we setting public as static folder.
 //console.log(__dirname);//It is a local variable that returns the directory name of the current module. It returns the folder path of the current JavaScript file ..output-- C:\Users\digvijay kishore kud\Desktop\devcamper_api
