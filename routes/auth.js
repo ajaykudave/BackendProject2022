@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 
 console.log('Inside Route file');
-const { registerUser , login , getMe , forgetPassword , resetPassword ,updateUserDetails ,updatePassword} = require('../controllers/auth.js'); //destructuring
+const { registerUser , login , logout , getMe , forgetPassword , resetPassword ,updateUserDetails ,updatePassword} = require('../controllers/auth.js'); //destructuring
 
 const { protect } = require('../middlewares/auth.js');
 router
@@ -12,6 +12,10 @@ router
  router
 .route('/login')
 .post(login);
+
+router
+.route('/logout')
+.get(logout)
 
 //this route is for bringing logined User data..here we put protect becasue where we check the token we got at the time of login and also we fetch login user data and attached to req objcet..so that it used in controller 
 router
